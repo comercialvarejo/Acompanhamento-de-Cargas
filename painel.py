@@ -151,7 +151,8 @@ def validar(viagens):
         if not isinstance(v, dict):
             problemas.append(f"{onde}: deveria ser um objeto")
             continue
-        for campo in ("numero", "transportadora", "motorista", "data", "hora", "placa"):
+        # 'placa' é opcional: nem toda versão do romaneio traz esse campo
+        for campo in ("numero", "transportadora", "motorista", "data", "hora"):
             if not str(v.get(campo, "")).strip():
                 problemas.append(f"{onde}: falta o campo '{campo}'")
         numero = str(v.get("numero", "")).strip()
@@ -209,6 +210,7 @@ def normalizar(viagens):
     """Deixa todos os números no mesmo tipo (caixas/quilos como decimal),
     para que o arquivo gravado possa ser comparado com o que foi lido."""
     for v in viagens:
+        v["placa"] = str(v.get("placa", "")).strip()
         v["entregas"] = int(v.get("entregas", len(v["pedidos"])))
         v["totalCx"] = round(float(v.get("totalCx", 0)), 3)
         v["totalKg"] = round(float(v.get("totalKg", 0)), 3)
