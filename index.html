@@ -79,6 +79,37 @@
     color:#f2b93a; font-weight:600;
   }
   .regiao{color:var(--text); font-weight:600;}
+
+  /* ---------- resumo de peso ---------- */
+  .peso-wrap{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:16px 18px; margin-bottom:16px;
+  }
+  .peso-titulo{
+    font-size:11px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.06em; font-weight:600; margin-bottom:12px;
+  }
+  .peso-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  .peso-card{
+    background:var(--panel2); border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; display:flex; flex-direction:column; gap:4px;
+  }
+  .peso-card.destaque{border-color:var(--s3);}
+  .peso-label{font-size:12px; color:var(--muted);}
+  .peso-valor{font-size:22px; font-weight:700; line-height:1.15; font-variant-numeric:tabular-nums;}
+  .peso-valor span{font-size:12px; font-weight:500; color:var(--muted); margin-left:2px;}
+  .peso-sub{font-size:11px; color:var(--muted);}
+  .peso-bar{
+    height:5px; border-radius:3px; background:rgba(255,255,255,0.07);
+    overflow:hidden; margin-top:6px;
+  }
+  .peso-bar i{display:block; height:100%; border-radius:3px; transition:width .3s;}
+  @media (max-width: 760px){
+    .peso-wrap{padding:14px;}
+    .peso-grid{grid-template-columns:1fr 1fr; gap:10px;}
+    .peso-card{padding:10px 12px;}
+    .peso-valor{font-size:18px;}
+  }
   .head-right{display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
   .status-label{font-size:10px; color:var(--muted); width:100%; text-align:right;}
   .totals{font-size:12px; color:var(--muted); text-align:right;}
@@ -284,6 +315,11 @@
 <div class="sync-bar sync-off" id="syncBar">
   <span class="dot-status"></span>
   <span id="syncText">Conectando à atualização em tempo real...</span>
+</div>
+
+<div class="peso-wrap">
+  <div class="peso-titulo">Resumo de peso</div>
+  <div class="peso-grid" id="resumoPeso"></div>
 </div>
 
 <div class="grid" id="grid"></div>
@@ -1104,6 +1140,36 @@ function render(){
   if(visiveis===0){
     grid.innerHTML = '<div class="empty">Nenhuma carga encontrada com esse filtro.</div>';
   }
+
+  // ---- resumo de peso ----
+  // Quanto peso já passou por cada etapa. A porcentagem é sobre os QUILOS
+  // (não sobre a quantidade de cargas), porque uma carga de 16 t pesa muito
+  // mais na operação do que uma de 1 t.
+  const kgTotal = viagens.reduce((s,v)=> s + Number(v.totalKg||0), 0);
+  const ETAPAS = [
+    {n:2, nome:"Separado",  cor:"var(--s2)"},
+    {n:3, nome:"Carregado", cor:"var(--s3)"},
+    {n:4, nome:"Faturado",  cor:"var(--s4)"},
+  ];
+  let htmlPeso = `
+    <div class="peso-card destaque">
+      <div class="peso-label">Total de cargas</div>
+      <div class="peso-valor" style="color:var(--s3)">${fmt(kgTotal)}<span>kg</span></div>
+      <div class="peso-sub">${viagens.length} ${viagens.length===1?'carga':'cargas'}</div>
+    </div>`;
+  ETAPAS.forEach(e=>{
+    const feitas = viagens.filter(v => (statusMap[v.numero]||{})[e.n]);
+    const kg = feitas.reduce((s,v)=> s + Number(v.totalKg||0), 0);
+    const pct = kgTotal > 0 ? Math.round(kg / kgTotal * 100) : 0;
+    htmlPeso += `
+    <div class="peso-card">
+      <div class="peso-label">${e.nome}</div>
+      <div class="peso-valor" style="color:${e.cor}">${fmt(kg)}<span>kg</span></div>
+      <div class="peso-sub">${feitas.length} de ${viagens.length} cargas &middot; ${pct}%</div>
+      <div class="peso-bar"><i style="width:${pct}%; background:${e.cor}"></i></div>
+    </div>`;
+  });
+  document.getElementById('resumoPeso').innerHTML = htmlPeso;
 
   const stats = document.getElementById('stats');
   const total = viagens.length;
