@@ -8,7 +8,7 @@
  * versão nova em vez de continuar mostrando a antiga.
  * O script painel.py já faz isso sozinho ao atualizar os dados.
  */
-const CACHE = "painel-cargas-v5";
+const CACHE = "painel-cargas-v6";
 
 const ARQUIVOS = [
   "./",
